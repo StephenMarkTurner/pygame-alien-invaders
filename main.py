@@ -2,38 +2,47 @@
 """
 """
 
+from pickle import FALSE
 import sys
 import pygame
-from pygameclass import Pygame
-from pygame.sprite import Group
 
 from ship import Ship
-from alien import Alien
+from alien import Alien, AlienFleet
 from settings import Settings
 from game_functions import GameFunctions
 
 
-def game_loop(settings):
-    game_functions = GameFunctions()
-    screen = settings.screen
-    ship = Ship(screen)
-    aliens = Group()
-    game_functions.create_alien_fleet(ship, settings, aliens)
+def game_loop(ship, settings, alien_fleet):
     keep_going = True
     while keep_going:
         keep_going = game_functions.check_events(ship, settings)
         ship.update()
-        aliens.update(settings)
-        game_functions.update_screen(ship, aliens, settings)
+        alien_fleet.update()
+        if(game_functions.collision_update(ship, alien_fleet)):
+            alien_fleet = AlienFleet(settings)
+        game_functions.update_screen(ship, settings, alien_fleet)
 
         pygame.time.delay(5)
 
 
+def pygame_init(settings):
+    print('init game')
+    pygame.init()
+    gs = settings.game_settings
+    pygame.display.set_caption(gs.caption)
+    screen = pygame.display.set_mode((gs.w, gs.h))
+    return screen
+
+
 print('starting program')
 settings = Settings()
-pg = Pygame(settings)
-game_loop(settings)
-pg.quit_game()
+settings.screen = pygame_init(settings)
+ship = Ship(settings)
+alien_fleet = AlienFleet(settings)
+game_functions = GameFunctions()
 
-print('finished program, calling sys.exit()')
+game_loop(ship, settings, alien_fleet)
+
+print('quit game')
+pygame.quit()
 sys.exit()

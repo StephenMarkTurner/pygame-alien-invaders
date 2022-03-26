@@ -1,25 +1,28 @@
-from wsgiref.util import shift_path_info
+
+
 import pygame
 from pygame.sprite import Sprite
+from settings import Settings
 
 
 class Bullet(Sprite):
 
     def __init__(self, ship, settings):
         super().__init__()
-        w = settings.bullet_width
-        h = settings.bullet_height
-        self.rect = pygame.Rect(0, 0, w, h)
+        self.screen = settings.screen
+        bs = settings.bullet_settings
+        self.sf = settings.bullet_settings.speed_factor
+        self.fg = settings.bullet_settings.fg
+        self.rect = pygame.Rect(0, 0, bs.w, bs.h)
         self.rect.centerx = ship.rect.centerx
         self.rect.top = ship.rect.top
         # Store as float, for better resolution.
         self.y = float(self.rect.y)
-        self.color = settings.bullet_color
-        self.speed_factor = settings.bullet_speed_factor
 
-    def update_position(self):
-        self.y -= self.speed_factor
+    def update(self):
+        self.y -= self.sf
         self.rect.y = self.y
 
-    def draw(self, settings):
-        pygame.draw.rect(settings.screen, self.color, self.rect)
+    # No self.image, so cannot use Group draw() functionality.
+    def draw(self):
+        pygame.draw.rect(self.screen, self.fg, self.rect)

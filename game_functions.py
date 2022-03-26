@@ -7,10 +7,9 @@ Created on Sat Mar 19 20:49:41 2022
 
 import pygame
 from ship import Ship
-from alien import Alien
 from settings import Settings
 from bullet import Bullet
-from alien import Alien
+from alien import AlienFleet, Alien
 
 
 class GameFunctions():
@@ -43,7 +42,7 @@ class GameFunctions():
             ship.moving_down = True
         elif ev.key == pygame.K_SPACE:
             bullets = ship.bullets
-            if len(bullets) < settings.bullets_allowed:
+            if len(bullets) < settings.ship_settings.max_bullets:
                 new_bullet = Bullet(ship, settings)
                 bullets.add(new_bullet)
 
@@ -57,74 +56,24 @@ class GameFunctions():
         elif ev.key == pygame.K_DOWN:
             ship.moving_down = False
 
-    def update_screen(self, ship, aliens, settings):
-        screen = settings.screen
-        screen.fill(settings.bg)
-        self.draw_bullets(ship, settings)
+    def update_screen(self, ship, settings, alien_fleet):
+        settings.screen.fill(settings.game_settings.bg)
+        ship.draw_bullets()
         ship.draw()
-        self.draw_aliens(settings, aliens)
+        alien_fleet.draw()
         pygame.display.flip()
         # print('flip')
 
-    def draw_bullets(self, ship, settings):
-        # Iterate a copy, since may be deleting item.
-        bullets = ship.bullets
-        bullets_copy = ship.bullets.copy()
-        for bullet in bullets_copy:
-            bullet.update_position()
-            if bullet.rect.bottom <= 0:
-                bullets.remove(bullet)
-            else:
-                bullet.draw(settings)
+    def collision_update(self, ship, alien_fleet):
+        b = ship.bullets
+        a = alien_fleet.aliens
+        collisions = pygame.sprite.groupcollide(b, a, True, True)
+        if len(a) == 0:
+            b.empty()
+            return True
+        else:
+            return False
+        
 
-    def create_alien_fleet(self, ship, settings, aliens):
-        screen = settings.screen
-        test_alien = Alien(screen)
-        alien_w = test_alien.rect.width
-        alien_h = test_alien.rect.height
-        cols = self.num_aliens_per_row(settings, alien_w)
-        rows = self.num_rows_of_aliens(settings, ship.rect.height, alien_h)
-        for row in range(rows):
-            for col in range(cols):
-                alien = self.create_alien(settings, alien_w, alien_h, row, col)
-                aliens.add(alien)
 
-    def num_rows_of_aliens(self, settings, ship_h, h):
-        h2 = h * 2
-        h3 = h * 3
-        avail_space = settings.h - h3 - ship_h
-        num_rows = int(avail_space / h2)
-        return num_rows
-
-    def num_aliens_per_row(self, settings, w):
-        w2 = w * 2
-        avail_space = settings.w - w2
-        num_aliens = int(avail_space / w2)
-        return num_aliens
-
-    def create_alien(self, settings, w, h, row, col):
-        w2 = w * 2
-        h2 = h * 2
-        alien = Alien(settings)
-        alien.x = w + w2 * col
-        alien.rect.x = alien.x
-        alien.rect.y = h + h2 * row
-        return alien
-
-    def check_alien_fleet_edges(self, settings, aliens):
-        for alien in aliens.sprites():
-            if alien.check_edges(settings):
-                self.reverse_alien_fleet(settings, aliens)
-                break
-
-    def reverse_alien_fleet(self, settings, aliens):
-        for alien in aliens.sprites():
-            alien.rect.y += settings.alien_drop_speed_factor
-        settings.alien_direction *= -1
-
-    def draw_aliens(self, settings, aliens):
-        self.check_alien_fleet_edges(settings, aliens)
-        screen = settings.screen
-        for alien in aliens:
-            alien.draw(screen)
         
